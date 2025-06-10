@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <meta name="color-scheme" content="light dark" />
+
+      <style>
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 48px);
+      gap: 4px;
+    }
+
+    canvas {
+      width: 48px;
+      height: 48px;
+      image-rendering: pixelated; /* for pixel art */
+      border: 1px solid #ccc;
+    }
+    </style>
+</head>
+<script>
+
+    /**
+     * Replaces the root content with the template of id
+     * @param {string} id
+     */
+    function showSection(id) {
+        if (!id) return;
+        const template = document.getElementById(id)
+        if (!template) return;
+        const clone = template.content.cloneNode(true)
+
+        window.root.replaceChildren(clone)
+    }
+
+    function sliceAndDisplayTiles(img, tileSize = 48) {
+        const cols = Math.floor(img.width / tileSize);
+        const rows = Math.floor(img.height / tileSize);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const grid = document.getElementById('grid');
+
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                const tileCanvas = document.createElement('canvas');
+                tileCanvas.width = tileSize;
+                tileCanvas.height = tileSize;
+                const tileCtx = tileCanvas.getContext('2d');
+
+                tileCtx.drawImage(
+                    canvas,
+                    x * tileSize, y * tileSize, tileSize, tileSize,
+                    0, 0, tileSize, tileSize
+                );
+
+                grid.appendChild(tileCanvas);
+            }
+        }
+    }
+
+    /**
+     * Gets an image
+     * @param {string} path
+     */
+    async function getTileSet(path) {
+        if (!path) return;
+
+        try {
+            const response = await fetch(path);
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const imageURL = URL.createObjectURL(blob);
+
+            const img = new Image();
+            img.src = imageURL;
+
+            img.onload = () => {
+                sliceAndDisplayTiles(img);
+                URL.revokeObjectURL(imageURL); // clean up
+            };
+
+            img.onerror = (e) => {
+                console.error("Image failed to load", e);
+            };
+
+
+        } catch (error) {
+            console.error(error.message);
+        }
+
+
+
+    }
+
+    getTileSet("uploads/Modern_Exteriors_48x48/Modern_Exteriors_Complete_Tileset_48x48.png")
+
+
+
+
+</script>
+
+<body>
+
+    <nav>
+        <button type="button" onclick="showSection('upload')">upload</button>
+        <button type="button" onclick="showSection('prepare')">prepare</button>
+        <button type="button" onclick="showSection('editor')">editor</button>
+        <button type="button" onclick="showSection('files')">files</button>
+    </nav>
+
+    <template id="upload">
+        <h1>Upload</h1>
+    </template>
+    <template id="prepare">
+        <h1>Prepare</h1>
+  <div id="grid"></div>
+
+    </template>
+    <template id="editor">
+        <h1>Editor</h1>
+    </template>
+    <template id="files">
+        <h1>Files</h1>
+    </template>
+
+    <main id="root">
+
+    </main>
+    <script>
+        showSection("prepare")
+    </script>
+</body>
+
+</html>
