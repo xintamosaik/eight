@@ -37,35 +37,42 @@
         window.root.replaceChildren(clone)
     }
 
-    function sliceAndDisplayTiles(img, tileSize = 48) {
-        const cols = Math.floor(img.width / tileSize);
-        const rows = Math.floor(img.height / tileSize);
+function drawTilesToSingleCanvas(img, tileSize) {
+  const cols = Math.floor(img.width / tileSize);
+  const rows = Math.floor(img.height / tileSize);
+  const displayCols = 24;
+  const displayRows = 120;
 
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
+  const outputCanvas = document.createElement('canvas');
+  outputCanvas.width = displayCols * tileSize;
+  outputCanvas.height = displayRows * tileSize;
+  outputCanvas.style.width = "100vw"
+  outputCanvas.style.height= "unset"
+  const ctx = outputCanvas.getContext('2d');
 
-        const grid = document.getElementById('grid');
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = img.width;
+  tmpCanvas.height = img.height;
 
-        for (let y = 0; y < rows; y++) {
-            for (let x = 0; x < cols; x++) {
-                const tileCanvas = document.createElement('canvas');
-                tileCanvas.width = tileSize;
-                tileCanvas.height = tileSize;
-                const tileCtx = tileCanvas.getContext('2d');
+ 
+  tmpCanvas.getContext('2d').drawImage(img, 0, 0);
 
-                tileCtx.drawImage(
-                    canvas,
-                    x * tileSize, y * tileSize, tileSize, tileSize,
-                    0, 0, tileSize, tileSize
-                );
-
-                grid.appendChild(tileCanvas);
-            }
-        }
+  let tileNum = 0;
+  for (let y = 0; y < displayRows; y++) {
+    for (let x = 0; x < displayCols; x++) {
+      const srcX = (tileNum % cols) * tileSize;
+      const srcY = Math.floor(tileNum / cols) * tileSize;
+      ctx.drawImage(
+        tmpCanvas,
+        srcX, srcY, tileSize, tileSize,
+        x * tileSize, y * tileSize, tileSize, tileSize
+      );
+      tileNum++;
     }
+  }
+
+  document.getElementById('grid').appendChild(outputCanvas);
+}
 
     /**
      * Gets an image
@@ -87,7 +94,7 @@
             img.src = imageURL;
 
             img.onload = () => {
-                sliceAndDisplayTiles(img);
+                drawTilesToSingleCanvas(img, 48);
                 URL.revokeObjectURL(imageURL); // clean up
             };
 
